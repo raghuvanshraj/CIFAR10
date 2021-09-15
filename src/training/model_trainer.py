@@ -22,8 +22,8 @@ class ModelTrainer(object):
             criterion: nn.Module,
             training_config: TrainingConfig,
             training_data: data.Dataset,
-            cuda: Optional[bool],
-            validation_data: Optional[data.Dataset],
+            cuda: Optional[bool] = False,
+            validation_data: Optional[data.Dataset] = None,
     ):
         self.train_loader = data.DataLoader(training_data, batch_size=training_config.batch_size, shuffle=True)
         self.validation_loader = data.DataLoader(validation_data, batch_size=training_config.batch_size, shuffle=True)
@@ -50,8 +50,8 @@ class ModelTrainer(object):
 
         for e in range(epochs):
             for x, y in self.train_loader:
-                loss, corrects = self.single_pass(x, y)
-                training_metrics.update(loss, corrects)
+                loss, accuracy = self.single_pass(x, y)
+                training_metrics.update(loss, accuracy)
 
             training_metrics.record()
             training_metrics.print(e, Fore.CYAN)
@@ -59,8 +59,8 @@ class ModelTrainer(object):
             if validation:
                 with torch.no_grad():
                     for x, y in self.validation_loader:
-                        loss, corrects = self.single_pass(x, y)
-                        validation_metrics.update(loss, corrects)
+                        loss, accuracy = self.single_pass(x, y)
+                        validation_metrics.update(loss, accuracy)
 
                     validation_metrics.record()
                     validation_metrics.print(e, Fore.YELLOW)
@@ -80,14 +80,14 @@ class ModelTrainer(object):
             self.optimizer.step()
 
         preds = torch.argmax(y_pred, dim=1)
-        return loss.item(), torch.sum(preds == y.data).item()
+        return loss.item(), (torch.sum(preds == y.data).item() / y.shape[0]) * 100
 
     def predict(
             self,
             img: Image,
             transform: Callable,
-            preprocess: Optional[Callable],
-            classes: Optional[Mapping[int, str]]
+            preprocess: Optional[Callable] = None,
+            classes: Optional[Mapping[int, str]] = None
     ) -> Any:
         if preprocess:
             img = preprocess(img)

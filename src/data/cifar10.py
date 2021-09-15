@@ -13,6 +13,7 @@ class CIFAR10(data.Dataset):
             root: str,
             transform: Callable,
     ):
+        super(CIFAR10, self).__init__()
         self.data = datasets.CIFAR10(root=root, train=train, download=True, transform=transform)
 
     def __len__(self):
