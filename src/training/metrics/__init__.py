@@ -1,1 +1,1 @@
-from src.training.metrics.recorder import MetricsRecorder
+from src.training.metrics.metrics_recorder import MetricsRecorder

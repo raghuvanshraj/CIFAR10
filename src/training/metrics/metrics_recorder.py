@@ -1,6 +1,6 @@
 class MetricsRecorder(object):
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
         self.update_count = 0.
         self.running_loss = 0.
@@ -23,6 +23,6 @@ class MetricsRecorder(object):
         self.accuracies.append(self.running_corrects / self.update_count)
         self.clear()
 
-    def print(self, epoch: int):
+    def print(self, epoch: int, color_prefix: str):
         data = [f'{self.name}:', f'epoch: {epoch}', f'loss: {self.losses[-1]}', f'accuracy: {self.accuracies[-1]}']
-        print('{: <20}{: <10}{: <30}{: <30}'.format(*data))
+        print(color_prefix + '{: <20}{: <20}{: <30}{: <30}'.format(*data))

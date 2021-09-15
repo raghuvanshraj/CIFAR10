@@ -1,10 +1,12 @@
-from typing import Callable, Iterator
+from typing import Callable, Iterator, Mapping, Any
 from typing import Optional
 
 import torch
 import torch.cuda
 import torch.nn as nn
 import torch.utils.data as data
+from PIL import Image
+from colorama import Fore
 from torch.nn.parameter import Parameter
 
 from src.training.config import TrainingConfig
@@ -33,7 +35,7 @@ class ModelTrainer(object):
                 self.device = torch.device('cuda:0')
                 print(f'using {torch.cuda.get_device_name(self.device.index)}')
             else:
-                print(f'no gpu available, processing on cpu')
+                print('no gpu available, processing on cpu')
 
         self.model = model.to(self.device)
         self.optimizer = optimizer(self.model.parameters(), training_config.lr)
@@ -52,7 +54,7 @@ class ModelTrainer(object):
                 training_metrics.update(loss, corrects)
 
             training_metrics.record()
-            training_metrics.print(e)
+            training_metrics.print(e, Fore.CYAN)
 
             if validation:
                 with torch.no_grad():
@@ -61,7 +63,7 @@ class ModelTrainer(object):
                         validation_metrics.update(loss, corrects)
 
                     validation_metrics.record()
-                    validation_metrics.print(e)
+                    validation_metrics.print(e, Fore.YELLOW)
 
         return training_metrics, validation_metrics
 
@@ -77,5 +79,23 @@ class ModelTrainer(object):
             loss.backward()
             self.optimizer.step()
 
-        preds = torch.argmax(y_pred, 1)
+        preds = torch.argmax(y_pred, dim=1)
         return loss.item(), torch.sum(preds == y.data).item()
+
+    def predict(
+            self,
+            img: Image,
+            transform: Callable,
+            preprocess: Optional[Callable],
+            classes: Optional[Mapping[int, str]]
+    ) -> Any:
+        if preprocess:
+            img = preprocess(img)
+
+        img = transform(img)
+        img = img.to(self.device).unsqueeze(0)
+        with torch.no_grad():
+            y_pred = self.model(img)
+
+        pred = torch.argmax(y_pred, dim=1)
+        return classes[pred.item()] if classes else pred.item()

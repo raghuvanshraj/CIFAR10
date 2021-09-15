@@ -1,1 +1,1 @@
-from src.models.lenet import *
+from src.models.cnn import *
